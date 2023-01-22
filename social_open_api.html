@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Parrilla de redes sociales</title>
+    <!-- Import Vuejs -->
+    <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+    <!-- Import axios -->
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <!-- Import bootstrap 5 -->
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+      integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC"
+      crossorigin="anonymous"
+    />
+
+    <script
+      src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"
+      integrity="sha384-IQsoLXl5PILFhosVNubq5LC7Qb9DXgDA9i+tQ8Zj3iwWAwPtgFTxbJ8NT4GN1R8p"
+      crossorigin="anonymous"
+    ></script>
+
+    <script
+      src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.min.js"
+      integrity="sha384-cVKIPhGWiC2Al4u+LWgxfKTRIcfu0JTxR+EQDz/bgldoEyl4H0zUF0QKbrJ0EcQF"
+      crossorigin="anonymous"
+    ></script>
+  </head>
+  <body>
+
+    <div id="app" class="card m-5">
+      <div class="card-body">
+        <h5 class="card-title
+        ">Parrilla de redes sociales</h5>
+        <p class="card-text">
+            {{ message }}
+        </p>
+        <p>
+            <div class="row row-cols-1 row-cols-md-3 g-4">
+                <div class="col" v-for="(item, index) in textos.slice(0, 10)" :key="index">
+                    <div class="card">
+                        <div class="card-body">
+                            <img :src="item.image" class="card-img-top" alt="...">
+                            <p></p>
+                            <h5 class="card-title">{{ item.title }}</h5>
+                            <p>{{ item.text }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+
+
+        </p>
+        <button class="btn btn-primary" @click="getPosts">Get Posts</button>
+        </div>
+    </div>
+
+  </body>
+</html>
+
+<script>
+  //Create an vuejs instance
+  var app = new Vue({
+    el: "#app",
+    data: {
+      message: "Parrilla de redes sociales",
+      //Create an array of objects
+      posts: [],
+      textos: []
+    },
+    //Create a method to get the data from the API
+    methods: {
+      async getPosts() {
+
+
+        try {
+
+            this.message = "Cargando...";
+            var data = {
+            model: "text-davinci-003",
+            prompt:
+                "Devuelve solamente 10 títulos o encabezados de redes sociales sobre tecnología actual separados por coma y que sean completamente diferentes el uno del otro, evita preguntas y ofrecimientos de aprendizaje, no numeres las respuestas ni uses comillas",
+            temperature: 0.5,
+            max_tokens: 500,
+            top_p: 1,
+            frequency_penalty: 0,
+            presence_penalty: 0,
+            };
+
+            var config = {
+            method: "post",
+            url: "https://api.openai.com/v1/completions",
+            headers: {
+                Authorization:
+                "Bearer XXX",
+                "Content-Type": "application/json",
+            },
+            data: data,
+            };
+
+            const response = await axios(config)
+            this.message = "Parrilla de redes sociales cargada"; 
+            //clear response of characters ":\n\n", \n\n and quotes
+            response.data.choices[0].text = response.data.choices[0].text.replace(":\n\n", "");
+            response.data.choices[0].text = response.data.choices[0].text.replace("\n\n", "");
+            response.data.choices[0].text = response.data.choices[0].text.replace(".", "");
+            response.data.choices[0].text = response.data.choices[0].text.replace(/['"]+/g, '');
+            
+            let post_titles = response.data.choices[0].text.split(",");
+            post_titles = Array.from(post_titles);
+            post_titles.forEach(element => {
+                this.posts.push({title: element});
+            });
+
+            this.message = "Cargando textos cortos para redes sociales..."; 
+            //Por cada item en el array post, realiza una petición a la API
+            let complete_array = [];
+            this.posts.forEach((element, index) => {
+                let titulo = element.title;
+                var data = {
+                model: "text-davinci-003",
+                prompt:
+                    "Devuelve un texto corto para redes sobre este tema: "+titulo+", finaliza con el texto 'Conoce más en zeroazul.com' y adiciona a los hastags #zeroazul #tecnología #redessociales",
+                temperature: 0.5,
+                max_tokens: 500,
+                top_p: 1,
+                frequency_penalty: 0,
+                presence_penalty: 0,
+                };
+
+                var config = {
+                method: "post",
+                url: "https://api.openai.com/v1/completions",
+                headers: {
+                    Authorization:
+                    "Bearer XXX",
+                    "Content-Type": "application/json",
+                },
+                data: data,
+                };
+
+                
+                async function getText() {
+
+                    const response = await axios(config)
+                    response.data.choices[0].text = response.data.choices[0].text.replace(":\n\n", "");
+                    response.data.choices[0].text = response.data.choices[0].text.replace("\n\n", "");
+                    //response.data.choices[0].text = response.data.choices[0].text.replace(".", "");
+                    response.data.choices[0].text = response.data.choices[0].text.replace(/['"]+/g, '');
+                    element.text = response.data.choices[0].text;
+                    //push the object to the array
+                    complete_array.push(element);
+                    
+                }
+                getText();
+
+
+                var data = {
+                "prompt": "Photograhy of modern technology people, team work, millenials, vibrant "+titulo,
+                "n": 1,
+                "size": "256x256"
+                };
+
+                var config = {
+                method: 'post',
+                url: 'https://api.openai.com/v1/images/generations',
+                headers: { 
+                    'Authorization': 'Bearer XXX', 
+                    'Content-Type': 'application/json'
+                },
+                data : data
+                };
+
+
+                async function getImage() {
+
+                const response = await axios(config)
+                //console.log(response.data.data);
+                element.image = response.data.data[0].url;
+                //push the object to the array
+                complete_array.push(element);
+
+                }
+                getImage();
+
+                
+                
+            })
+            
+            
+            this.textos = complete_array;
+            this.message = "Textos cargados";
+            console.log(this.textos);
+            
+
+        } catch (error) {
+          console.log(error);
+        }
+
+
+
+        
+      },
+    },
+  });
+</script>
